@@ -1151,6 +1151,7 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
     case GST_RTSP_AUTH_DIGEST:{
       gchar *response;
       gchar *auth_string, *auth_string2;
+      gchar *algorithm;
       gchar *realm;
       gchar *nonce;
       gchar *opaque;
@@ -1168,11 +1169,13 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
       if (realm == NULL || nonce == NULL)
         break;
 
+      algorithm =
+          (gchar *) g_hash_table_lookup (conn->auth_params, "algorithm");
       method = gst_rtsp_method_as_text (message->type_data.request.method);
       uri = message->type_data.request.uri;
 
       response =
-          gst_rtsp_generate_digest_auth_response (NULL, method, realm,
+          gst_rtsp_generate_digest_auth_response (algorithm, method, realm,
           conn->username, conn->passwd, uri, nonce);
       auth_string =
           g_strdup_printf ("Digest username=\"%s\", "
@@ -1187,6 +1190,14 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
         g_free (auth_string);
         auth_string = auth_string2;
       }
+
+      if (algorithm != NULL) {
+        auth_string2 = g_strdup_printf ("%s, algorithm=%s", auth_string,
+            algorithm);
+        g_free (auth_string);
+        auth_string = auth_string2;
+      }
+
       /* Do not keep any old Authorization headers */
       gst_rtsp_message_remove_header (message, GST_RTSP_HDR_AUTHORIZATION, -1);
       gst_rtsp_message_take_header (message, GST_RTSP_HDR_AUTHORIZATION,
