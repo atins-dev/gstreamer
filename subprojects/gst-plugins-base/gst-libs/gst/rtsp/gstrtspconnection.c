@@ -2375,8 +2375,6 @@ parse_line (guint8 * buffer, GstRTSPMessage * msg)
             comma = next_value;
           } else if (*next_value == ' ' && next_value[1] != ',' &&
               next_value[1] != '=' && comma != NULL) {
-            next_value = comma;
-            comma = NULL;
             break;
           }
         } else if (*next_value == ',')
