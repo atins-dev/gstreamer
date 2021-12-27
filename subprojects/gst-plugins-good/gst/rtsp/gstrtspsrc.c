@@ -6444,6 +6444,7 @@ gst_rtspsrc_parse_auth_hdr (GstRTSPMessage * response,
     GstRTSPAuthMethod * methods, GstRTSPConnection * conn, gboolean * stale)
 {
   GstRTSPAuthCredential **credentials, **credential;
+  gboolean is_sha256_set = FALSE;
 
   g_return_val_if_fail (response != NULL, FALSE);
   g_return_val_if_fail (methods != NULL, FALSE);
@@ -6459,7 +6460,9 @@ gst_rtspsrc_parse_auth_hdr (GstRTSPMessage * response,
   while (*credential) {
     if ((*credential)->scheme == GST_RTSP_AUTH_BASIC) {
       *methods |= GST_RTSP_AUTH_BASIC;
-    } else if ((*credential)->scheme == GST_RTSP_AUTH_DIGEST) {
+    } else if ((*credential)->scheme == GST_RTSP_AUTH_DIGEST
+      /* Skip other credentials if sha-256 is already set */
+      && !is_sha256_set) {
       GstRTSPAuthParam **param = (*credential)->params;
 
       *methods |= GST_RTSP_AUTH_DIGEST;
@@ -6471,6 +6474,9 @@ gst_rtspsrc_parse_auth_hdr (GstRTSPMessage * response,
         if (strcmp ((*param)->name, "stale") == 0
             && g_ascii_strcasecmp ((*param)->value, "TRUE") == 0)
           *stale = TRUE;
+        if (strcmp ((*param)->name, "algorithm") == 0
+            && g_ascii_strcasecmp ((*param)->value, "SHA-256") == 0)
+          is_sha256_set = TRUE;
         gst_rtsp_connection_set_auth_param (conn, (*param)->name,
             (*param)->value);
         param++;
