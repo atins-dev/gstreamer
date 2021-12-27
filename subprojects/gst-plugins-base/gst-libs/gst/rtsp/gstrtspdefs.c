@@ -600,6 +600,83 @@ done:
   return response;
 }
 
+/* Some part of rfc7616 is applied.
+  FIXME: support SHA-512, session variant, a2 for auth-int */
+static gchar *
+auth_digest_compute_response (const gchar * algorithm, const gchar * method,
+    const gchar * realm, const gchar * username, const gchar * password,
+    const gchar * uri, const gchar * nonce,
+    const gchar * qop, const gchar * cnonce, const gchar * nc)
+{
+  gchar hex_a1[65] = { 0, };
+  gchar hex_a2[65] = { 0, };
+  GChecksum *context;
+  const gchar *digest_string;
+  size_t hash_len;
+  gchar *response = NULL;
+
+  if (algorithm == NULL || g_ascii_strcasecmp (algorithm, "md5") == 0) {
+    context = g_checksum_new (G_CHECKSUM_MD5);
+    hash_len = 32;
+  } else if (g_ascii_strcasecmp (algorithm, "SHA-256") == 0) {
+    context = g_checksum_new (G_CHECKSUM_SHA256);
+    hash_len = 64;
+  } else {
+    return response;
+  }
+
+  if ((qop != NULL
+          && (g_ascii_strcasecmp (qop, "auth") == 0
+              || g_ascii_strcasecmp (qop, "auth-int") == 0))
+      && (cnonce == NULL || nc == NULL)) {
+    return response;
+  }
+
+  /* compute A1 */
+  g_checksum_reset (context);
+  g_checksum_update (context, (const guchar *) username, strlen (username));
+  g_checksum_update (context, (const guchar *) ":", 1);
+  g_checksum_update (context, (const guchar *) realm, strlen (realm));
+  g_checksum_update (context, (const guchar *) ":", 1);
+  g_checksum_update (context, (const guchar *) password, strlen (password));
+  digest_string = g_strdup (g_checksum_get_string (context));
+  g_assert (strlen (digest_string) == hash_len);
+  memcpy (hex_a1, digest_string, hash_len);
+
+  /* compute A2 */
+  g_checksum_reset (context);
+  g_checksum_update (context, (const guchar *) method, strlen (method));
+  g_checksum_update (context, (const guchar *) ":", 1);
+  g_checksum_update (context, (const guchar *) uri, strlen (uri));
+  digest_string = g_checksum_get_string (context);
+  g_assert (strlen (digest_string) == hash_len);
+  memcpy (hex_a2, digest_string, hash_len);
+
+  /* compute KD */
+  g_checksum_reset (context);
+  g_checksum_update (context, (const guchar *) hex_a1, hash_len);
+  g_checksum_update (context, (const guchar *) ":", 1);
+  g_checksum_update (context, (const guchar *) nonce, strlen (nonce));
+  g_checksum_update (context, (const guchar *) ":", 1);
+  if (qop != NULL
+      && (g_ascii_strcasecmp (qop, "auth") == 0
+          || g_ascii_strcasecmp (qop, "auth-int") == 0)) {
+    g_checksum_update (context, (const guchar *) nc, strlen (nc));
+    g_checksum_update (context, (const guchar *) ":", 1);
+    g_checksum_update (context, (const guchar *) cnonce, strlen (cnonce));
+    g_checksum_update (context, (const guchar *) ":", 1);
+    g_checksum_update (context, (const guchar *) qop, strlen (qop));
+    g_checksum_update (context, (const guchar *) ":", 1);
+  }
+  g_checksum_update (context, (const guchar *) hex_a2, hash_len);
+  response = g_strdup (g_checksum_get_string (context));
+
+done:
+  g_checksum_free (context);
+
+  return response;
+}
+
 /**
  * gst_rtsp_generate_digest_auth_response:
  * @algorithm: (nullable): Hash algorithm to use, or %NULL for MD5
@@ -632,11 +709,10 @@ gst_rtsp_generate_digest_auth_response (const gchar * algorithm,
   g_return_val_if_fail (uri != NULL, NULL);
   g_return_val_if_fail (nonce != NULL, NULL);
 
-  if (algorithm == NULL || g_ascii_strcasecmp (algorithm, "md5") == 0) {
-    gchar *a1 = auth_digest_compute_a1_md5 (realm, username, password);
-    ret = auth_digest_compute_response_md5 (method, a1, uri, nonce);
-    g_free (a1);
-  }
+  ret = auth_digest_compute_response (algorithm, method,
+      realm, username, password, uri, nonce,
+      /* FIXME: send real values */
+      NULL, NULL, NULL);
 
   return ret;
 }
