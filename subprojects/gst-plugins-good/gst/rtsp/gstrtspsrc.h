@@ -281,6 +281,7 @@ struct _GstRTSPSrc {
   gboolean          is_live;
   gboolean          ignore_x_server_reply;
   GstStructure     *prop_extra_http_request_headers;
+  gboolean          media_only;
 
   /* state */
   GstRTSPState       state;
