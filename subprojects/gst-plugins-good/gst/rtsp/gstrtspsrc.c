@@ -2371,11 +2371,14 @@ gst_rtspsrc_create_stream (GstRTSPSrc * src, GstSDPMessage * sdp, gint idx,
   GstRTSPStream *stream;
   const gchar *control_path;
   const GstSDPMedia *media;
+  gchar *media_type;
 
   /* get media, should not return NULL */
   media = gst_sdp_message_get_media (sdp, idx);
-  if (media == NULL)
-    return NULL;
+  media_type = gst_sdp_media_get_media (media);
+  if (media == NULL ||
+      !(g_strcmp0 (media_type, "video") == 0
+          || g_strcmp0 (media_type, "audio") == 0))
 
   stream = g_new0 (GstRTSPStream, 1);
   stream->parent = src;
@@ -6468,8 +6471,8 @@ gst_rtspsrc_parse_auth_hdr (GstRTSPMessage * response,
     if ((*credential)->scheme == GST_RTSP_AUTH_BASIC) {
       *methods |= GST_RTSP_AUTH_BASIC;
     } else if ((*credential)->scheme == GST_RTSP_AUTH_DIGEST
-      /* Skip other credentials if sha-256 is already set */
-      && !is_sha256_set) {
+        /* Skip other credentials if sha-256 is already set */
+        && !is_sha256_set) {
       GstRTSPAuthParam **param = (*credential)->params;
 
       *methods |= GST_RTSP_AUTH_DIGEST;
