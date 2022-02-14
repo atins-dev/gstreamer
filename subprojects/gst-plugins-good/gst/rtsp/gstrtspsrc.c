@@ -312,6 +312,7 @@ gst_rtsp_backchannel_get_type (void)
 #define DEFAULT_ONVIF_RATE_CONTROL TRUE
 #define DEFAULT_IS_LIVE TRUE
 #define DEFAULT_IGNORE_X_SERVER_REPLY FALSE
+#define DEFAULT_MEDIA_ONLY FALSE
 
 enum
 {
@@ -361,7 +362,8 @@ enum
   PROP_ONVIF_MODE,
   PROP_ONVIF_RATE_CONTROL,
   PROP_IS_LIVE,
-  PROP_IGNORE_X_SERVER_REPLY
+  PROP_IGNORE_X_SERVER_REPLY,
+  PROP_MEDIA_ONLY
 };
 
 #define GST_TYPE_RTSP_NAT_METHOD (gst_rtsp_nat_method_get_type())
@@ -1094,6 +1096,19 @@ gst_rtspsrc_class_init (GstRTSPSrcClass * klass)
           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
   /**
+   * GstRtspSrc:media-only
+   *
+   * Setup RTP channel only for media(video, audio).
+   * This property is for ignis-project.
+   *
+   * Since: 1.18_v1
+   */
+  g_object_class_install_property (gobject_class, PROP_MEDIA_ONLY,
+      g_param_spec_boolean ("media-only", "Media Only",
+          "Setup only media channels",
+          DEFAULT_MEDIA_ONLY, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  /**
    * GstRTSPSrc::handle-request:
    * @rtspsrc: a #GstRTSPSrc
    * @request: a #GstRTSPMessage
@@ -1522,6 +1537,7 @@ gst_rtspsrc_init (GstRTSPSrc * src)
   src->is_live = DEFAULT_IS_LIVE;
   src->seek_seqnum = GST_SEQNUM_INVALID;
   src->group_id = GST_GROUP_ID_INVALID;
+  src->media_only = DEFAULT_MEDIA_ONLY;
 
   /* get a list of all extensions */
   src->extensions = gst_rtsp_ext_list_get ();
@@ -1867,6 +1883,9 @@ gst_rtspsrc_set_property (GObject * object, guint prop_id, const GValue * value,
     case PROP_IGNORE_X_SERVER_REPLY:
       rtspsrc->ignore_x_server_reply = g_value_get_boolean (value);
       break;
+    case PROP_MEDIA_ONLY:
+      rtspsrc->media_only = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -2039,6 +2058,9 @@ gst_rtspsrc_get_property (GObject * object, guint prop_id, GValue * value,
       break;
     case PROP_IGNORE_X_SERVER_REPLY:
       g_value_set_boolean (value, rtspsrc->ignore_x_server_reply);
+      break;
+    case PROP_MEDIA_ONLY:
+      g_value_set_boolean (value, rtspsrc->media_only);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2368,10 +2390,15 @@ gst_rtspsrc_create_stream (GstRTSPSrc * src, GstSDPMessage * sdp, gint idx,
 
   /* get media, should not return NULL */
   media = gst_sdp_message_get_media (sdp, idx);
-  media_type = gst_sdp_media_get_media (media);
-  if (media == NULL ||
-      !(g_strcmp0 (media_type, "video") == 0
-          || g_strcmp0 (media_type, "audio") == 0))
+  if (media == NULL)
+    return NULL;
+
+  if (src->media_only) {
+    media_type = gst_sdp_media_get_media (media);
+    if (!(g_strcmp0 (media_type, "video") == 0
+            || g_strcmp0 (media_type, "audio") == 0))
+      return NULL;
+  }
 
   stream = g_new0 (GstRTSPStream, 1);
   stream->parent = src;
