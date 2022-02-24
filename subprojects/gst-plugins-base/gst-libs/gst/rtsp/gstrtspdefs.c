@@ -699,7 +699,8 @@ done:
 gchar *
 gst_rtsp_generate_digest_auth_response (const gchar * algorithm,
     const gchar * method, const gchar * realm, const gchar * username,
-    const gchar * password, const gchar * uri, const gchar * nonce)
+    const gchar * password, const gchar * uri, const gchar * nonce,
+    const gchar * qop, const gchar * cnonce, const gchar * nc)
 {
   gchar *ret = NULL;
   g_return_val_if_fail (method != NULL, NULL);
@@ -710,9 +711,7 @@ gst_rtsp_generate_digest_auth_response (const gchar * algorithm,
   g_return_val_if_fail (nonce != NULL, NULL);
 
   ret = auth_digest_compute_response (algorithm, method,
-      realm, username, password, uri, nonce,
-      /* FIXME: send real values */
-      NULL, NULL, NULL);
+      realm, username, password, uri, nonce, qop, cnonce, nc);
 
   return ret;
 }
