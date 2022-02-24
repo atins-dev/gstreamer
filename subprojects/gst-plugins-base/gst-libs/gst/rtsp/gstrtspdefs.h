@@ -439,7 +439,10 @@ gchar *            gst_rtsp_generate_digest_auth_response (const gchar *algorith
                                                            const gchar *username,
                                                            const gchar *password,
                                                            const gchar *uri,
-                                                           const gchar *nonce);
+                                                           const gchar *nonce,
+                                                           const gchar *qop,
+                                                           const gchar *cnonce,
+                                                           const gchar *nc);
 
 GST_RTSP_API
 gchar *            gst_rtsp_generate_digest_auth_response_from_md5 (const gchar *algorithm,

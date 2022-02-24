@@ -201,6 +201,7 @@ struct _GstRTSPConnection
   gchar *username;
   gchar *passwd;
   GHashTable *auth_params;
+  guint32 nc;
 
   guint content_length_limit;
 
@@ -1155,6 +1156,9 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
       gchar *realm;
       gchar *nonce;
       gchar *opaque;
+      gchar *qop;
+      gchar *cnonce = NULL;
+      gchar *nc;
       const gchar *uri;
       const gchar *method;
 
@@ -1173,18 +1177,27 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
           (gchar *) g_hash_table_lookup (conn->auth_params, "algorithm");
       method = gst_rtsp_method_as_text (message->type_data.request.method);
       uri = message->type_data.request.uri;
+      qop = (gchar *) g_hash_table_lookup (conn->auth_params, "qop");
+      nc = g_strdup_printf ("%08x", ++(conn->nc));
 
-      response =
-          gst_rtsp_generate_digest_auth_response (algorithm, method, realm,
-          conn->username, conn->passwd, uri, nonce);
       auth_string =
           g_strdup_printf ("Digest username=\"%s\", "
-          "realm=\"%s\", nonce=\"%s\", uri=\"%s\", response=\"%s\"",
-          conn->username, realm, nonce, uri, response);
-      g_free (response);
+          "realm=\"%s\", nonce=\"%s\", uri=\"%s\"",
+          conn->username, realm, nonce, uri);
+
+      if ((qop != NULL
+              && (g_ascii_strcasecmp (qop, "auth") == 0
+                  || g_ascii_strcasecmp (qop, "auth-int") == 0))) {
+        cnonce = g_strdup_printf ("%08x%08x", g_random_int (), g_random_int ());
+        auth_string2 =
+            g_strdup_printf ("%s, qop=%s, cnonce=\"%s\", nc=%s", auth_string,
+            qop, cnonce, nc);
+        g_free (auth_string);
+        auth_string = auth_string2;
+      }
 
       opaque = (gchar *) g_hash_table_lookup (conn->auth_params, "opaque");
-      if (opaque) {
+      if (opaque && g_ascii_strcasecmp (opaque, "")) {
         auth_string2 = g_strdup_printf ("%s, opaque=\"%s\"", auth_string,
             opaque);
         g_free (auth_string);
@@ -1197,6 +1210,15 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
         g_free (auth_string);
         auth_string = auth_string2;
       }
+
+      response =
+          gst_rtsp_generate_digest_auth_response (algorithm, method, realm,
+          conn->username, conn->passwd, uri, nonce, qop, cnonce, nc);
+      auth_string2 =
+          g_strdup_printf ("%s, response=\"%s\"", auth_string, response);
+      g_free (auth_string);
+      auth_string = auth_string2;
+      g_free (response);
 
       /* Do not keep any old Authorization headers */
       gst_rtsp_message_remove_header (message, GST_RTSP_HDR_AUTHORIZATION, -1);
