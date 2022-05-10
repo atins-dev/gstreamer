@@ -818,7 +818,7 @@ default_digest_auth (GstRTSPAuth * auth, GstRTSPContext * ctx,
     expected_response =
         gst_rtsp_generate_digest_auth_response (NULL,
         gst_rtsp_method_as_text (ctx->method), realm, user,
-        digest_entry->pass, uri, nonce);
+        digest_entry->pass, uri, nonce, NULL, NULL, NULL);
   }
 
   if (!expected_response || strcmp (response, expected_response) != 0)
