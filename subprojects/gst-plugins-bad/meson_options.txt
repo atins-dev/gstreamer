@@ -77,7 +77,7 @@ option('wayland', type : 'feature', value : 'auto', description : 'Wayland plugi
 option('x11', type : 'feature', value : 'auto', description : 'X11 support in Vulkan, GL and rfb plugins')
 
 # Feature options for plugins that need external deps
-option('aes', type : 'feature', value : 'auto', description : 'AES encryption/decryption plugin')
+option('aes', type : 'feature', value : 'disabled', description : 'AES encryption/decryption plugin')
 option('aom', type : 'feature', value : 'auto', description : 'AOM AV1 video codec plugin')
 option('avtp', type : 'feature', value : 'auto', description : 'Audio/Video Transport Protocol (AVTP) plugin')
 option('amfcodec', type : 'feature', value : 'auto', description : 'AMD AMF codec plugin')
@@ -102,7 +102,7 @@ option('decklink', type : 'feature', value : 'auto', description : 'DeckLink aud
 option('directfb', type : 'feature', value : 'auto', description : 'DirectFB video sink plugin')
 option('directsound', type : 'feature', value : 'auto', description : 'Directsound audio source plugin')
 option('directshow', type : 'feature', value : 'auto', description : 'Directshow audio/video plugins')
-option('dtls', type : 'feature', value : 'auto', description : 'DTLS encoder and decoder plugin')
+option('dtls', type : 'feature', value : 'disabled', description : 'DTLS encoder and decoder plugin')
 option('dts', type : 'feature', value : 'auto', description : 'DTS audio decoder plugin (GPL - only built if gpl option is also enabled!)')
 option('dvb', type : 'feature', value : 'auto', description : 'DVB video bin and source plugin')
 option('faac', type : 'feature', value : 'auto', description : 'Free AAC audio encoder plugin')
@@ -186,7 +186,7 @@ option('v4l2codecs', type : 'feature', value : 'auto', description : 'Video4Linu
 option('isac', type : 'feature', value : 'auto', description : 'iSAC plugin')
 
 # HLS plugin options
-option('hls', type : 'feature', value : 'auto', description : 'HTTP Live Streaming plugin')
+option('hls', type : 'feature', value : 'disabled', description : 'HTTP Live Streaming plugin')
 option('hls-crypto', type : 'combo', value : 'auto', choices : ['auto', 'nettle', 'libgcrypt', 'openssl'],
        description: 'Crypto library to use for HLS plugin')
 
