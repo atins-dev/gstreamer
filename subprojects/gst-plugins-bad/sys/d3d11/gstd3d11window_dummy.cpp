@@ -50,7 +50,7 @@ static void gst_d3d11_window_dummy_on_resize (GstD3D11Window * window,
     guint width, guint height);
 static gboolean gst_d3d11_window_dummy_prepare (GstD3D11Window * window,
     guint display_width, guint display_height, GstCaps * caps,
-    gboolean * video_processor_available, GError ** error);
+    gboolean * video_processor_available, DXGI_FORMAT display_format, GError ** error);
 static void gst_d3d11_window_dummy_unprepare (GstD3D11Window * window);
 static gboolean
 gst_d3d11_window_dummy_open_shared_handle (GstD3D11Window * window,
@@ -83,7 +83,7 @@ gst_d3d11_window_dummy_init (GstD3D11WindowDummy * self)
 static gboolean
 gst_d3d11_window_dummy_prepare (GstD3D11Window * window,
     guint display_width, guint display_height, GstCaps * caps,
-    gboolean * video_processor_available, GError ** error)
+    gboolean * video_processor_available, DXGI_FORMAT display_format, GError ** error)
 {
   g_clear_pointer (&window->processor, gst_d3d11_video_processor_free);
   g_clear_pointer (&window->converter, gst_d3d11_converter_free);

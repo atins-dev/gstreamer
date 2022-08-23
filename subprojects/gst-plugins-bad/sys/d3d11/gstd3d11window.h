@@ -158,6 +158,7 @@ struct _GstD3D11WindowClass
                                            guint display_height,
                                            GstCaps * caps,
                                            gboolean * video_processor_available,
+                                           DXGI_FORMAT display_format,
                                            GError ** error);
 
   void          (*unprepare)              (GstD3D11Window * window);
@@ -190,6 +191,7 @@ gboolean      gst_d3d11_window_prepare              (GstD3D11Window * window,
                                                      guint display_height,
                                                      GstCaps * caps,
                                                      gboolean * video_processor_available,
+                                                     DXGI_FORMAT display_format,
                                                      GError ** error);
 
 GstFlowReturn gst_d3d11_window_render               (GstD3D11Window * window,

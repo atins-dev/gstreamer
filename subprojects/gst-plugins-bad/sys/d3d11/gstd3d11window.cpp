@@ -111,7 +111,7 @@ static void gst_d3d11_window_on_resize_default (GstD3D11Window * window,
     guint width, guint height);
 static gboolean gst_d3d11_window_prepare_default (GstD3D11Window * window,
     guint display_width, guint display_height, GstCaps * caps,
-    gboolean * video_processor_available, GError ** error);
+    gboolean * video_processor_available, DXGI_FORMAT display_format, GError ** error);
 
 static void
 gst_d3d11_window_class_init (GstD3D11WindowClass * klass)
@@ -433,7 +433,7 @@ typedef struct
 gboolean
 gst_d3d11_window_prepare (GstD3D11Window * window, guint display_width,
     guint display_height, GstCaps * caps, gboolean * video_processor_available,
-    GError ** error)
+    DXGI_FORMAT display_format, GError ** error)
 {
   GstD3D11WindowClass *klass;
 
@@ -446,13 +446,13 @@ gst_d3d11_window_prepare (GstD3D11Window * window, guint display_width,
       GST_PTR_FORMAT, display_width, display_height, caps);
 
   return klass->prepare (window, display_width, display_height, caps,
-      video_processor_available, error);
+      video_processor_available, display_format, error);
 }
 
 static gboolean
 gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
     guint display_height, GstCaps * caps, gboolean * video_processor_available,
-    GError ** error)
+    DXGI_FORMAT display_format, GError ** error)
 {
   GstD3D11WindowClass *klass;
   guint swapchain_flags = 0;
@@ -464,11 +464,11 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
       D3D11_FORMAT_SUPPORT_TEXTURE2D | D3D11_FORMAT_SUPPORT_DISPLAY;
   UINT supported_flags = 0;
   GstD3D11WindowDisplayFormat formats[] = {
-    {DXGI_FORMAT_R8G8B8A8_UNORM, GST_VIDEO_FORMAT_RGBA, FALSE},
     {DXGI_FORMAT_B8G8R8A8_UNORM, GST_VIDEO_FORMAT_BGRA, FALSE},
+    {DXGI_FORMAT_R8G8B8A8_UNORM, GST_VIDEO_FORMAT_RGBA, FALSE},
     {DXGI_FORMAT_R10G10B10A2_UNORM, GST_VIDEO_FORMAT_RGB10A2_LE, FALSE},
   };
-  const GstD3D11WindowDisplayFormat *chosen_format = NULL;
+  const GstD3D11WindowDisplayFormat *chosen_format = nullptr;
   const GstDxgiColorSpace *chosen_colorspace = NULL;
 #if (GST_D3D11_DXGI_HEADER_VERSION >= 4)
   gboolean have_hdr10 = FALSE;
@@ -512,12 +512,34 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
     return FALSE;
   }
 
-  for (i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (&window->info); i++) {
-    if (GST_VIDEO_INFO_COMP_DEPTH (&window->info, i) > 8) {
-      if (formats[2].supported) {
-        chosen_format = &formats[2];
+  if (display_format != DXGI_FORMAT_UNKNOWN) {
+    for (guint i = 0; i < G_N_ELEMENTS (formats); i++) {
+      if (display_format == formats[i].dxgi_format && formats[i].supported) {
+        GST_DEBUG_OBJECT (window, "Requested format %s is supported",
+            gst_d3d11_dxgi_format_to_string (display_format));
+        chosen_format = &formats[i];
+        break;
       }
-      break;
+    }
+
+    if (!chosen_format) {
+      GST_ERROR_OBJECT (window, "Requested DXGI FORMAT %d is not supported",
+          display_format);
+      g_set_error (error, GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_FAILED,
+          "Cannot determine render format");
+      if (config)
+        gst_structure_free (config);
+
+      return FALSE;
+    }
+  } else {
+    for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (&window->info); i++) {
+      if (GST_VIDEO_INFO_COMP_DEPTH (&window->info, i) > 8) {
+        if (formats[2].supported) {
+          chosen_format = &formats[2];
+        }
+        break;
+      }
     }
   }
 
