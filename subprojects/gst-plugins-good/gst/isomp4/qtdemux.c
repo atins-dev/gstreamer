@@ -4154,6 +4154,8 @@ qtdemux_parse_moof (GstQTDemux * qtdemux, const guint8 * buffer, guint length,
       /* iterate all siblings */
       trun_node = qtdemux_tree_get_sibling_by_type_full (trun_node, FOURCC_trun,
           &trun_data);
+      /* don't use tfdt for subsequent trun as it only refers to the first */
+      tfdt_node = NULL;
     }
 
     uuid_node = qtdemux_tree_get_child_by_type (traf_node, FOURCC_uuid);
@@ -7813,10 +7815,16 @@ qtdemux_inflate (void *z_buffer, guint z_length, guint * length)
       break;
     }
 
+    if (*length > G_MAXUINT - 4096 || *length > QTDEMUX_MAX_SAMPLE_INDEX_SIZE) {
+      GST_WARNING ("too big decompressed data");
+      ret = Z_MEM_ERROR;
+      break;
+    }
+
     *length += 4096;
     buffer = (guint8 *) g_realloc (buffer, *length);
     z.next_out = (Bytef *) (buffer + z.total_out);
-    z.avail_out += 4096;
+    z.avail_out += *length - z.total_out;
   } while (z.avail_in > 0);
 
   if (ret != Z_STREAM_END) {

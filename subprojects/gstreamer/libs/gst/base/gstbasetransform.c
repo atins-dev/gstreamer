@@ -475,7 +475,7 @@ gst_base_transform_transform_caps (GstBaseTransform * trans,
     GST_LOG_OBJECT (trans, "  to: %" GST_PTR_FORMAT, ret);
 
 #ifdef GST_ENABLE_EXTRA_CHECKS
-    if (filter) {
+    if (ret && filter) {
       if (!gst_caps_is_subset (ret, filter)) {
         GstCaps *intersection;
 
@@ -1595,6 +1595,10 @@ gst_base_transform_default_query (GstBaseTransform * trans,
 
       gst_query_parse_caps (query, &filter);
       caps = gst_base_transform_query_caps (trans, pad, filter);
+      if (!caps) {
+        GST_WARNING_OBJECT (pad, "no caps can be handled by this pad");
+        caps = gst_caps_new_empty ();
+      }
       gst_query_set_caps_result (query, caps);
       gst_caps_unref (caps);
       ret = TRUE;

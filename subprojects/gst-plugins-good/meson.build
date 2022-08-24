@@ -1,5 +1,5 @@
 project('gst-plugins-good', 'c',
-  version : '1.20.2.1',
+  version : '1.20.3',
   meson_version : '>= 0.59',
   default_options : [ 'warning_level=1',
                       'buildtype=debugoptimized' ])
@@ -345,13 +345,7 @@ if have_gstgl
   endif
 endif
 
-zlib_dep = dependency('zlib', required : false)
-if not zlib_dep.found()
-  zlib_dep = cc.find_library('z', required : false)
-  if not zlib_dep.found() or not cc.has_header('zlib.h')
-    zlib_dep = subproject('zlib').get_variable('zlib_dep')
-  endif
-endif
+zlib_dep = dependency('zlib')
 cdata.set('HAVE_ZLIB', true)
 
 glib_deps = [dependency('glib-2.0', version : glib_req, fallback: ['glib', 'libglib_dep']),

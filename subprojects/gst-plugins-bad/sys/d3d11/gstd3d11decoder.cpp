@@ -409,7 +409,7 @@ gst_d3d11_decoder_ensure_output_view (GstD3D11Decoder * self,
 
   mem = (GstD3D11Memory *) gst_buffer_peek_memory (buffer, 0);
   if (!gst_d3d11_memory_get_decoder_output_view (mem, self->video_device,
-          &self->decoder_profile)) {
+          self->decoder_handle, &self->decoder_profile)) {
     GST_ERROR_OBJECT (self, "Decoder output view is unavailable");
     return FALSE;
   }
@@ -1364,7 +1364,7 @@ gst_d3d11_decoder_get_output_view_from_buffer (GstD3D11Decoder * decoder,
 
   dmem = (GstD3D11Memory *) mem;
   view = gst_d3d11_memory_get_decoder_output_view (dmem, decoder->video_device,
-      &decoder->decoder_profile);
+      decoder->decoder_handle, &decoder->decoder_profile);
 
   if (!view) {
     GST_ERROR_OBJECT (decoder, "Decoder output view is unavailable");
@@ -1602,6 +1602,8 @@ gst_d3d11_decoder_negotiate (GstD3D11Decoder * decoder,
   gboolean alternate_interlaced;
   gboolean alternate_supported = FALSE;
   gboolean d3d11_supported = FALSE;
+  /* No d3d11 element supports alternate now */
+  gboolean d3d11_alternate_supported = FALSE;
   GstVideoCodecState *input_state;
   GstStructure *s;
   const gchar *str;
@@ -1636,10 +1638,13 @@ gst_d3d11_decoder_negotiate (GstD3D11Decoder * decoder,
       if (gst_caps_features_contains (features,
               GST_CAPS_FEATURE_MEMORY_D3D11_MEMORY)) {
         d3d11_supported = TRUE;
+
+        if (gst_caps_features_contains (features,
+                GST_CAPS_FEATURE_FORMAT_INTERLACED)) {
+          d3d11_alternate_supported = TRUE;
+        }
       }
 
-      /* FIXME: software deinterlace element will not return interlaced caps
-       * feature... We should fix it */
       if (gst_caps_features_contains (features,
               GST_CAPS_FEATURE_FORMAT_INTERLACED)) {
         alternate_supported = TRUE;
@@ -1657,7 +1662,7 @@ gst_d3d11_decoder_negotiate (GstD3D11Decoder * decoder,
     GST_FIXME_OBJECT (videodec,
         "Implement alternating interlaced stream for D3D11");
 
-    if (alternate_supported) {
+    if (d3d11_alternate_supported || (!d3d11_supported && alternate_supported)) {
       gint height = GST_VIDEO_INFO_HEIGHT (info);
 
       /* Set caps resolution with display size, that's how we designed
