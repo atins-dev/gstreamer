@@ -76,9 +76,10 @@ enum
 static GType
 gst_d3d11_video_sink_display_format_type (void)
 {
+  static gsize id = 0;
   static GType format_type = 0;
 
-  GST_D3D11_CALL_ONCE_BEGIN {
+  if (g_once_init_enter (&id)) {
     static const GEnumValue format_types[] = {
       {DXGI_FORMAT_UNKNOWN, "DXGI_FORMAT_UNKNOWN", "unknown"},
       {DXGI_FORMAT_R10G10B10A2_UNORM,
@@ -92,7 +93,9 @@ gst_d3d11_video_sink_display_format_type (void)
 
     format_type = g_enum_register_static ("GstD3D11VideoSinkDisplayFormat",
         format_types);
-  } GST_D3D11_CALL_ONCE_END;
+
+    g_once_init_leave (&id, format_type);
+  }
 
   return format_type;
 }
@@ -886,8 +889,6 @@ gst_d3d11_video_sink_prepare_window (GstD3D11VideoSink * self)
       "enable-navigation-events", self->enable_navigation_events,
       "emit-present", emit_present, nullptr);
   GST_OBJECT_UNLOCK (self);
-
-  gst_d3d11_window_set_orientation (self->window, self->selected_method);
 
   g_signal_connect (self->window, "key-event",
       G_CALLBACK (gst_d3d11_video_sink_key_event), self);
