@@ -527,8 +527,6 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
           display_format);
       g_set_error (error, GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_FAILED,
           "Cannot determine render format");
-      if (config)
-        gst_structure_free (config);
 
       return FALSE;
     }
