@@ -61,6 +61,7 @@ enum
   PROP_FULLSCREEN_TOGGLE_MODE,
   PROP_FULLSCREEN,
   PROP_DRAW_ON_SHARED_TEXTURE,
+  PROP_ROTATE_METHOD,
   PROP_DISPLAY_FORMAT,
   PROP_EMIT_PRESENT,
 };
@@ -165,6 +166,13 @@ struct _GstD3D11VideoSink
   GRecMutex draw_lock;
 
   gchar *title;
+
+  /* method configured via property */
+  GstVideoOrientationMethod method;
+  /* method parsed from tag */
+  GstVideoOrientationMethod tag_method;
+  /* method currently selected based on "method" and "tag_method" */
+  GstVideoOrientationMethod selected_method;
 };
 
 static void gst_d3d11_videosink_set_property(GObject *object, guint prop_id,
@@ -290,6 +298,18 @@ gst_d3d11_video_sink_class_init(GstD3D11VideoSinkClass *klass)
                                                        DEFAULT_DRAW_ON_SHARED_TEXTURE,
                                                        (GParamFlags)(G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY |
                                                                      G_PARAM_STATIC_STRINGS)));
+  /**
+   * GstD3D11VideoSink:rotate-method:
+   *
+   * Video rotation/flip method to use
+   *
+   * Since: 1.22
+   */
+  g_object_class_install_property(gobject_class, PROP_ROTATE_METHOD,
+                                  g_param_spec_enum("rotate-method", "Rotate Method",
+                                                    "Rotate method to use",
+                                                    GST_TYPE_VIDEO_ORIENTATION_METHOD, GST_VIDEO_ORIENTATION_IDENTITY,
+                                                    (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   /**
    * GstD3D11VideoSink:display-format:
@@ -474,6 +494,10 @@ gst_d3d11_videosink_set_property(GObject *object, guint prop_id,
   case PROP_DRAW_ON_SHARED_TEXTURE:
     self->draw_on_shared_texture = g_value_get_boolean(value);
     break;
+  case PROP_ROTATE_METHOD:
+    gst_d3d11_video_sink_set_orientation(self,
+                                         (GstVideoOrientationMethod)g_value_get_enum(value), FALSE);
+    break;
   case PROP_DISPLAY_FORMAT:
     self->display_format = (DXGI_FORMAT)g_value_get_enum(value);
     break;
@@ -520,6 +544,8 @@ gst_d3d11_videosink_get_property(GObject *object, guint prop_id,
   case PROP_DRAW_ON_SHARED_TEXTURE:
     g_value_set_boolean(value, self->draw_on_shared_texture);
     break;
+  case PROP_ROTATE_METHOD:
+    g_value_set_enum(value, self->method);
   case PROP_DISPLAY_FORMAT:
     g_value_set_enum(value, self->display_format);
     break;
@@ -1168,6 +1194,64 @@ gst_d3d11_video_sink_event(GstBaseSink *sink, GstEvent *event)
       }
 
       g_free(title);
+    }
+    break;
+  }
+  default:
+    break;
+  }
+
+  return GST_BASE_SINK_CLASS(parent_class)->event(sink, event);
+}
+
+static gboolean
+gst_d3d11_video_sink_event(GstBaseSink *sink, GstEvent *event)
+{
+  GstD3D11VideoSink *self = GST_D3D11_VIDEO_SINK(sink);
+
+  switch (GST_EVENT_TYPE(event))
+  {
+  case GST_EVENT_TAG:
+  {
+    GstTagList *taglist;
+    gchar *title = nullptr;
+    GstVideoOrientationMethod method = GST_VIDEO_ORIENTATION_IDENTITY;
+
+    gst_event_parse_tag(event, &taglist);
+    gst_tag_list_get_string(taglist, GST_TAG_TITLE, &title);
+
+    if (title)
+    {
+      const gchar *app_name = g_get_application_name();
+      std::string title_string;
+      GstD3D11CSLockGuard lk(&self->lock);
+
+      if (app_name)
+      {
+        title_string = std::string(title) + " : " + std::string(app_name);
+      }
+      else
+      {
+        title_string = std::string(title);
+      }
+
+      if (self->window)
+      {
+        gst_d3d11_window_set_title(self->window, title_string.c_str());
+      }
+      else
+      {
+        g_free(self->title);
+        self->title = g_strdup(title_string.c_str());
+      }
+
+      g_free(title);
+    }
+
+    if (gst_video_orientation_from_tag(taglist, &method))
+    {
+      GstD3D11CSLockGuard lk(&self->lock);
+      gst_d3d11_video_sink_set_orientation(self, method, TRUE);
     }
     break;
   }

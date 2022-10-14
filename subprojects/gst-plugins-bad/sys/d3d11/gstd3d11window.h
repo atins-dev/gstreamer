@@ -32,16 +32,16 @@
 
 G_BEGIN_DECLS
 
-#define GST_TYPE_D3D11_WINDOW             (gst_d3d11_window_get_type())
-#define GST_D3D11_WINDOW(obj)             (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_D3D11_WINDOW, GstD3D11Window))
-#define GST_D3D11_WINDOW_CLASS(klass)     (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_D3D11_WINDOW, GstD3D11WindowClass))
-#define GST_IS_D3D11_WINDOW(obj)          (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_D3D11_WINDOW))
-#define GST_IS_D3D11_WINDOW_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_D3D11_WINDOW))
-#define GST_D3D11_WINDOW_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS((obj), GST_TYPE_D3D11_WINDOW, GstD3D11WindowClass))
+#define GST_TYPE_D3D11_WINDOW (gst_d3d11_window_get_type())
+#define GST_D3D11_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_D3D11_WINDOW, GstD3D11Window))
+#define GST_D3D11_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_D3D11_WINDOW, GstD3D11WindowClass))
+#define GST_IS_D3D11_WINDOW(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_D3D11_WINDOW))
+#define GST_IS_D3D11_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_D3D11_WINDOW))
+#define GST_D3D11_WINDOW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), GST_TYPE_D3D11_WINDOW, GstD3D11WindowClass))
 #define GST_D3D11_WINDOW_TOGGLE_MODE_GET_TYPE (gst_d3d11_window_fullscreen_toggle_mode_type())
 
-typedef struct _GstD3D11Window        GstD3D11Window;
-typedef struct _GstD3D11WindowClass   GstD3D11WindowClass;
+typedef struct _GstD3D11Window GstD3D11Window;
+typedef struct _GstD3D11WindowClass GstD3D11WindowClass;
 
 #define GST_D3D11_WINDOW_FLOW_CLOSED GST_FLOW_CUSTOM_ERROR
 
@@ -52,7 +52,7 @@ typedef enum
   GST_D3D11_WINDOW_FULLSCREEN_TOGGLE_MODE_PROPERTY = (1 << 2),
 } GstD3D11WindowFullscreenToggleMode;
 
-GType gst_d3d11_window_fullscreen_toggle_mode_type (void);
+GType gst_d3d11_window_fullscreen_toggle_mode_type(void);
 
 typedef enum
 {
@@ -129,101 +129,104 @@ struct _GstD3D11WindowClass
 {
   GstObjectClass object_class;
 
-  void          (*show)                   (GstD3D11Window * window);
+  void (*show)(GstD3D11Window *window);
 
-  void          (*update_swap_chain)      (GstD3D11Window * window);
+  void (*update_swap_chain)(GstD3D11Window *window);
 
-  void          (*change_fullscreen_mode) (GstD3D11Window * window);
+  void (*change_fullscreen_mode)(GstD3D11Window *window);
 
-  gboolean      (*create_swap_chain)      (GstD3D11Window * window,
-                                           DXGI_FORMAT format,
-                                           guint width,
-                                           guint height,
-                                           guint swapchain_flags,
-                                           IDXGISwapChain ** swap_chain);
+  gboolean (*create_swap_chain)(GstD3D11Window *window,
+                                DXGI_FORMAT format,
+                                guint width,
+                                guint height,
+                                guint swapchain_flags,
+                                IDXGISwapChain **swap_chain);
 
-  GstFlowReturn (*present)                (GstD3D11Window * window,
-                                           guint present_flags);
+  GstFlowReturn (*present)(GstD3D11Window *window,
+                           guint present_flags);
 
-  gboolean      (*unlock)                 (GstD3D11Window * window);
+  gboolean (*unlock)(GstD3D11Window *window);
 
-  gboolean      (*unlock_stop)            (GstD3D11Window * window);
+  gboolean (*unlock_stop)(GstD3D11Window *window);
 
-  void          (*on_resize)              (GstD3D11Window * window,
-                                           guint width,
-                                           guint height);
+  void (*on_resize)(GstD3D11Window *window,
+                    guint width,
+                    guint height);
 
-  gboolean      (*prepare)                (GstD3D11Window * window,
-                                           guint display_width,
-                                           guint display_height,
-                                           GstCaps * caps,
-                                           gboolean * video_processor_available,
-                                           DXGI_FORMAT display_format,
-                                           GError ** error);
+  gboolean (*prepare)(GstD3D11Window *window,
+                      guint display_width,
+                      guint display_height,
+                      GstCaps *caps,
+                      gboolean *video_processor_available,
+                      DXGI_FORMAT display_format,
+                      GError **error);
 
-  void          (*unprepare)              (GstD3D11Window * window);
+  void (*unprepare)(GstD3D11Window *window);
 
-  gboolean      (*open_shared_handle)     (GstD3D11Window * window,
-                                           GstD3D11WindowSharedHandleData * data);
+  gboolean (*open_shared_handle)(GstD3D11Window *window,
+                                 GstD3D11WindowSharedHandleData *data);
 
-  gboolean      (*release_shared_handle)  (GstD3D11Window * window,
-                                           GstD3D11WindowSharedHandleData * data);
+  gboolean (*release_shared_handle)(GstD3D11Window *window,
+                                    GstD3D11WindowSharedHandleData *data);
 
-  void          (*set_render_rectangle)   (GstD3D11Window * window,
-                                           const GstVideoRectangle * rect);
+  void (*set_render_rectangle)(GstD3D11Window *window,
+                               const GstVideoRectangle *rect);
 
-  void          (*set_title)              (GstD3D11Window * window,
-                                           const gchar *title);
+  void (*set_title)(GstD3D11Window *window,
+                    const gchar *title);
 };
 
-GType         gst_d3d11_window_get_type             (void);
+GType gst_d3d11_window_get_type(void);
 
-void          gst_d3d11_window_show                 (GstD3D11Window * window);
+void gst_d3d11_window_show(GstD3D11Window *window);
 
-void          gst_d3d11_window_set_render_rectangle (GstD3D11Window * window,
-                                                     const GstVideoRectangle * rect);
+void gst_d3d11_window_set_render_rectangle(GstD3D11Window *window,
+                                           const GstVideoRectangle *rect);
 
-void          gst_d3d11_window_set_title            (GstD3D11Window * window,
-                                                     const gchar *title);
+void gst_d3d11_window_set_title(GstD3D11Window *window,
+                                const gchar *title);
 
-gboolean      gst_d3d11_window_prepare              (GstD3D11Window * window,
-                                                     guint display_width,
-                                                     guint display_height,
-                                                     GstCaps * caps,
-                                                     gboolean * video_processor_available,
-                                                     DXGI_FORMAT display_format,
-                                                     GError ** error);
+void gst_d3d11_window_set_orientation(GstD3D11Window *window,
+                                      GstVideoOrientationMethod method);
 
-GstFlowReturn gst_d3d11_window_render               (GstD3D11Window * window,
-                                                     GstBuffer * buffer);
+gboolean gst_d3d11_window_prepare(GstD3D11Window *window,
+                                  guint display_width,
+                                  guint display_height,
+                                  GstCaps *caps,
+                                  gboolean *video_processor_available,
+                                  DXGI_FORMAT display_format,
+                                  GError **error);
 
-GstFlowReturn gst_d3d11_window_render_on_shared_handle (GstD3D11Window * window,
-                                                        GstBuffer * buffer,
-                                                        HANDLE shared_handle,
-                                                        guint texture_misc_flags,
-                                                        guint64 acquire_key,
-                                                        guint64 release_key);
+GstFlowReturn gst_d3d11_window_render(GstD3D11Window *window,
+                                      GstBuffer *buffer);
 
-gboolean      gst_d3d11_window_unlock               (GstD3D11Window * window);
+GstFlowReturn gst_d3d11_window_render_on_shared_handle(GstD3D11Window *window,
+                                                       GstBuffer *buffer,
+                                                       HANDLE shared_handle,
+                                                       guint texture_misc_flags,
+                                                       guint64 acquire_key,
+                                                       guint64 release_key);
 
-gboolean      gst_d3d11_window_unlock_stop          (GstD3D11Window * window);
+gboolean gst_d3d11_window_unlock(GstD3D11Window *window);
 
-void          gst_d3d11_window_unprepare            (GstD3D11Window * window);
+gboolean gst_d3d11_window_unlock_stop(GstD3D11Window *window);
 
-void          gst_d3d11_window_on_key_event         (GstD3D11Window * window,
-                                                     const gchar * event,
-                                                     const gchar * key);
+void gst_d3d11_window_unprepare(GstD3D11Window *window);
 
-void          gst_d3d11_window_on_mouse_event       (GstD3D11Window * window,
-                                                     const gchar * event,
-                                                     gint button,
-                                                     gdouble x,
-                                                     gdouble y);
+void gst_d3d11_window_on_key_event(GstD3D11Window *window,
+                                   const gchar *event,
+                                   const gchar *key);
+
+void gst_d3d11_window_on_mouse_event(GstD3D11Window *window,
+                                     const gchar *event,
+                                     gint button,
+                                     gdouble x,
+                                     gdouble y);
 
 /* utils */
-GstD3D11WindowNativeType gst_d3d11_window_get_native_type_from_handle (guintptr handle);
+GstD3D11WindowNativeType gst_d3d11_window_get_native_type_from_handle(guintptr handle);
 
-const gchar *            gst_d3d11_window_get_native_type_to_string   (GstD3D11WindowNativeType type);
+const gchar *gst_d3d11_window_get_native_type_to_string(GstD3D11WindowNativeType type);
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(GstD3D11Window, gst_object_unref)
 
