@@ -62,6 +62,7 @@ enum
   PROP_FULLSCREEN,
   PROP_DRAW_ON_SHARED_TEXTURE,
   PROP_DISPLAY_FORMAT,
+  PROP_EMIT_PRESENT,
 };
 
 #define DEFAULT_ADAPTER                   -1
@@ -71,6 +72,7 @@ enum
 #define DEFAULT_FULLSCREEN                FALSE
 #define DEFAULT_DRAW_ON_SHARED_TEXTURE    FALSE
 #define DEFAULT_DISPLAY_FORMAT            DXGI_FORMAT_UNKNOWN
+#define DEFAULT_EMIT_PRESENT              FALSE
 
 #define GST_TYPE_D3D11_VIDEO_SINK_DISPLAY_FORMAT (gst_d3d11_video_sink_display_format_type())
 static GType
@@ -152,6 +154,7 @@ struct _GstD3D11VideoSink
   gboolean fullscreen;
   gboolean draw_on_shared_texture;
   DXGI_FORMAT display_format;
+  gboolean emit_present;
 
   /* saved render rectangle until we have a window */
   GstVideoRectangle render_rect;
@@ -307,6 +310,19 @@ gst_d3d11_video_sink_class_init (GstD3D11VideoSinkClass * klass)
               GST_PARAM_MUTABLE_READY | G_PARAM_STATIC_STRINGS)));
 
   /**
+   * GstD3D11VideoSink:emit-present:
+   *
+   * Emits "present" signal
+   *
+   * Since: 1.22
+   */
+  g_object_class_install_property (gobject_class, PROP_EMIT_PRESENT,
+      g_param_spec_boolean ("emit-present", "Emit present",
+          "Emits present signal", DEFAULT_EMIT_PRESENT,
+          (GParamFlags) (G_PARAM_READWRITE | GST_PARAM_MUTABLE_READY |
+              G_PARAM_STATIC_STRINGS)));
+
+  /**
    * GstD3D11VideoSink::begin-draw:
    * @videosink: the #d3d11videosink
    *
@@ -359,10 +375,6 @@ gst_d3d11_video_sink_class_init (GstD3D11VideoSinkClass * klass)
    *
    * This signal will be emitted with gst_d3d11_device_lock() taken and
    * client should perform GPU operation from the thread where this signal
-   * emitted.
-   *
-   * If a client wants to listen this signal, the client must connect this
-   * signal before the first present. Otherwise this signal will not be
    * emitted.
    *
    * Since: 1.22
@@ -418,6 +430,7 @@ gst_d3d11_video_sink_init (GstD3D11VideoSink * self)
   self->fullscreen = DEFAULT_FULLSCREEN;
   self->draw_on_shared_texture = DEFAULT_DRAW_ON_SHARED_TEXTURE;
   self->display_format = DEFAULT_DISPLAY_FORMAT;
+  self->emit_present = DEFAULT_EMIT_PRESENT;
 
   g_rec_mutex_init (&self->draw_lock);
 }
@@ -466,6 +479,9 @@ gst_d3d11_videosink_set_property (GObject * object, guint prop_id,
     case PROP_DISPLAY_FORMAT:
       self->display_format = (DXGI_FORMAT) g_value_get_enum (value);
       break;
+    case PROP_EMIT_PRESENT:
+      self->emit_present = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -504,6 +520,9 @@ gst_d3d11_videosink_get_property (GObject * object, guint prop_id,
       break;
     case PROP_DISPLAY_FORMAT:
       g_value_set_enum (value, self->display_format);
+      break;
+    case PROP_EMIT_PRESENT:
+      g_value_set_boolean (value, self->emit_present);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -812,7 +831,6 @@ static gboolean
 gst_d3d11_video_sink_prepare_window (GstD3D11VideoSink * self)
 {
   GstD3D11WindowNativeType window_type = GST_D3D11_WINDOW_NATIVE_TYPE_HWND;
-  gboolean emit_present = FALSE;
 
   if (self->window)
     return TRUE;
@@ -875,19 +893,13 @@ gst_d3d11_video_sink_prepare_window (GstD3D11VideoSink * self)
     return FALSE;
   }
 
-  /* Emits present signal only if signal is connected for performance reason */
-  if (g_signal_has_handler_pending (self,
-          gst_d3d11_video_sink_signals[SIGNAL_PRESENT], 0, FALSE)) {
-    emit_present = TRUE;
-  }
-
   GST_OBJECT_LOCK (self);
   g_object_set (self->window,
       "force-aspect-ratio", self->force_aspect_ratio,
       "fullscreen-toggle-mode", self->fullscreen_toggle_mode,
       "fullscreen", self->fullscreen,
       "enable-navigation-events", self->enable_navigation_events,
-      "emit-present", emit_present, nullptr);
+      "emit-present", self->emit_present, nullptr);
   GST_OBJECT_UNLOCK (self);
 
   g_signal_connect (self->window, "key-event",
