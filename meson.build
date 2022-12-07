@@ -171,7 +171,7 @@ endforeach
 
 # Check if we need to also build glib-networking for TLS modules
 glib_dep = dependency('glib-2.0')
-if glib_dep.type_name() == 'internal'
+if glib_dep.type_name() == 'internal' or build_machine.system() == 'windows'
   subproject('glib-networking', required : get_option('tls'),
              default_options: ['gnutls=auto', 'openssl=auto'])
 endif
