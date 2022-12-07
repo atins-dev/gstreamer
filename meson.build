@@ -171,10 +171,10 @@ endforeach
 
 # Check if we need to also build glib-networking for TLS modules
 glib_dep = dependency('glib-2.0')
-if glib_dep.type_name() == 'internal'
+#if glib_dep.type_name() == 'internal'
   subproject('glib-networking', required : get_option('tls'),
              default_options: ['gnutls=auto', 'openssl=auto'])
-endif
+#endif
 
 plugins_doc_dep = custom_target('plugins-doc-cache',
   command: [python3, '-c', 'print("Built all doc caches")'],
