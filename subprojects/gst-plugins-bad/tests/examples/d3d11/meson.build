@@ -7,6 +7,15 @@ if host_system == 'windows'
     install: false,
   )
 
+ executable('d3d11videosink-threaded',
+   ['d3d11videosink-threaded.cpp'],
+   c_args : gst_plugins_bad_args,
+   cpp_args : gst_plugins_bad_args,
+   include_directories : [configinc, libsinc],
+   dependencies: [gst_dep, gstbase_dep, gstvideo_dep],
+   install: false,
+ )
+
   executable('d3d11screencapturesrc',
     ['d3d11screencapturesrc.cpp'],
     c_args : gst_plugins_bad_args,
