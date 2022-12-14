@@ -109,7 +109,7 @@ static GstFlowReturn gst_d3d111_window_present (GstD3D11Window * self,
     ID3D11RenderTargetView * rtv);
 static void gst_d3d11_window_on_resize_default (GstD3D11Window * window,
     guint width, guint height);
-static gboolean gst_d3d11_window_prepare_default (GstD3D11Window * window,
+static GstFlowReturn gst_d3d11_window_prepare_default (GstD3D11Window * window,
     guint display_width, guint display_height, GstCaps * caps,
     gboolean * video_processor_available, DXGI_FORMAT display_format, GError ** error);
 
@@ -430,14 +430,14 @@ typedef struct
   gboolean supported;
 } GstD3D11WindowDisplayFormat;
 
-gboolean
+GstFlowReturn
 gst_d3d11_window_prepare (GstD3D11Window * window, guint display_width,
     guint display_height, GstCaps * caps, gboolean * video_processor_available,
     DXGI_FORMAT display_format, GError ** error)
 {
   GstD3D11WindowClass *klass;
 
-  g_return_val_if_fail (GST_IS_D3D11_WINDOW (window), FALSE);
+  g_return_val_if_fail (GST_IS_D3D11_WINDOW (window), GST_FLOW_ERROR);
 
   klass = GST_D3D11_WINDOW_GET_CLASS (window);
   g_assert (klass->prepare != NULL);
@@ -449,7 +449,7 @@ gst_d3d11_window_prepare (GstD3D11Window * window, guint display_width,
       video_processor_available, display_format, error);
 }
 
-static gboolean
+static GstFlowReturn
 gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
     guint display_height, GstCaps * caps, gboolean * video_processor_available,
     DXGI_FORMAT display_format, GError ** error)
@@ -509,7 +509,7 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
     GST_ERROR_OBJECT (window, "Cannot determine render format");
     g_set_error (error, GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_FAILED,
         "Cannot determine render format");
-    return FALSE;
+    return GST_FLOW_ERROR;
   }
 
   if (display_format != DXGI_FORMAT_UNKNOWN) {
@@ -528,7 +528,7 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
       g_set_error (error, GST_RESOURCE_ERROR, GST_RESOURCE_ERROR_FAILED,
           "Cannot determine render format");
 
-      return FALSE;
+      return GST_FLOW_ERROR;
     }
   } else {
     for (guint i = 0; i < GST_VIDEO_INFO_N_COMPONENTS (&window->info); i++) {
@@ -798,12 +798,12 @@ gst_d3d11_window_prepare_default (GstD3D11Window * window, guint display_width,
 
   GST_DEBUG_OBJECT (window, "New swap chain 0x%p created", window->swap_chain);
 
-  return TRUE;
+  return GST_FLOW_OK;
 
 error:
   gst_d3d11_device_unlock (window->device);
 
-  return FALSE;
+  return GST_FLOW_ERROR;
 }
 
 void
