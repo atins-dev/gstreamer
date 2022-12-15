@@ -922,6 +922,11 @@ gst_d3d111_window_present (GstD3D11Window * self, GstBuffer * buffer,
   if (!buffer)
     return GST_FLOW_OK;
 
+  if (!rtv) {
+    GST_ERROR_OBJECT (self, "RTV is unavailable");
+    return GST_FLOW_ERROR;
+  }
+
   /* We use flip mode swapchain and will not redraw borders.
    * So backbuffer should be cleared manually in order to remove artifact of
    * previous client's rendering on present signal */
