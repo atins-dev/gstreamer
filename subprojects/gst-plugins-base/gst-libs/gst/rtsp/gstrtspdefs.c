@@ -639,7 +639,7 @@ auth_digest_compute_response (const gchar * algorithm, const gchar * method,
   g_checksum_update (context, (const guchar *) realm, strlen (realm));
   g_checksum_update (context, (const guchar *) ":", 1);
   g_checksum_update (context, (const guchar *) password, strlen (password));
-  digest_string = g_strdup (g_checksum_get_string (context));
+  digest_string = g_checksum_get_string (context);
   g_assert (strlen (digest_string) == hash_len);
   memcpy (hex_a1, digest_string, hash_len);
 
