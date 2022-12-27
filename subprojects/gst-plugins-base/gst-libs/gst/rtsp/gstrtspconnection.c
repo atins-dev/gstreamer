@@ -1219,6 +1219,8 @@ add_auth_header (GstRTSPConnection * conn, GstRTSPMessage * message)
       g_free (auth_string);
       auth_string = auth_string2;
       g_free (response);
+      g_free (cnonce);
+      g_free (nc);
 
       /* Do not keep any old Authorization headers */
       gst_rtsp_message_remove_header (message, GST_RTSP_HDR_AUTHORIZATION, -1);
