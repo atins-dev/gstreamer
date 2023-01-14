@@ -41,6 +41,10 @@
 #include "gsteglimage.h"
 #include "gstglmemoryegl.h"
 
+#if GST_GL_HAVE_WINDOW_WAYLAND
+#include <gst/gl/wayland/gstgldisplay_wayland.h>
+#endif
+
 GST_DEBUG_CATEGORY_STATIC (gst_gl_display_egl_debug);
 #define GST_CAT_DEFAULT gst_gl_display_egl_debug
 
@@ -364,6 +368,16 @@ gst_gl_display_egl_from_gl_display (GstGLDisplay * display)
     gst_object_unref (ret);
     return NULL;
   }
+#if GST_GL_HAVE_WINDOW_WAYLAND
+  if (display_type == GST_GL_DISPLAY_TYPE_WAYLAND &&
+      GST_IS_GL_DISPLAY_WAYLAND (display)) {
+    /* Cannot call terminate if the external wayland display has egl connection
+     * and it's still active after the termination */
+    ret->foreign_display =
+        GST_GL_DISPLAY_WAYLAND_CAST (display)->foreign_display;
+  }
+#endif
+
   g_object_set_data_full (G_OBJECT (display), GST_GL_DISPLAY_EGL_NAME,
       gst_object_ref (ret), (GDestroyNotify) gst_object_unref);
 
