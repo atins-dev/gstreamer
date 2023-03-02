@@ -5741,8 +5741,8 @@ check_field (GQuark field_id, const GValue * value, gpointer user_data)
   const GValue *other = gst_structure_id_get_value (structure, field_id);
   const gchar *name = gst_structure_get_name (structure);
 
-  if (g_str_has_prefix (name, "video/")) {
-    /* ignore framerate with video caps */
+  if (g_str_has_prefix (name, "video/") || g_str_has_prefix (name, "image/")) {
+    /* ignore framerate with video, image caps */
     if (g_strcmp0 (g_quark_to_string (field_id), "framerate") == 0)
       return TRUE;
   }
