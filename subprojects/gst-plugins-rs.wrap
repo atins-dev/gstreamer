@@ -2,4 +2,4 @@
 directory=gst-plugins-rs
 url=https://github.com/atins-dev/gst-plugins-rs.git
 push-url=git@github.com/atins-dev/gst-plugins-rs.git
-revision=0.9
+revision=gstreamer-1.20.3
