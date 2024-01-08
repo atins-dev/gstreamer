@@ -7863,8 +7863,15 @@ gst_qtdemux_process_adapter (GstQTDemux * demux, gboolean force)
             /* FIXME: should either be an assert or a plain check */
             g_return_val_if_fail (outbuf != NULL, GST_FLOW_ERROR);
 
-            ret = gst_qtdemux_decorate_and_push_buffer (demux, stream, outbuf,
-                dts, pts, duration, keyframe, dts, demux->offset);
+            if ((demux->segment.flags & GST_SEGMENT_FLAG_TRICKMODE_KEY_UNITS)
+                != 0 && stream->subtype == FOURCC_vide && !keyframe) {
+              GST_LOG_OBJECT (demux, "Skipping non-keyframe on track-id %u",
+                  stream->track_id);
+              ret = GST_FLOW_OK;
+            } else {
+              ret = gst_qtdemux_decorate_and_push_buffer (demux, stream, outbuf,
+                  dts, pts, duration, keyframe, dts, demux->offset);
+            }
           }
 
           /* combine flows */
