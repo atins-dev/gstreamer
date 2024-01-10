@@ -2506,6 +2506,14 @@ handle_gathered_gop (GstSplitMuxSink * splitmux, const InputGop * gop,
       GST_STIME_ARGS (queued_time), queued_bytes,
       GST_STIME_ARGS (next_gop_start_time), GST_STIME_ARGS (gop->start_time));
 
+  /* And set up to collect the next GOP */
+  if (max_out_running_time != G_MAXINT64) {
+    splitmux->input_state = SPLITMUX_INPUT_STATE_COLLECTING_GOP_START;
+  } else {
+    /* This is probably already the current state, but just in case: */
+    splitmux->input_state = SPLITMUX_INPUT_STATE_FINISHING_UP;
+  }
+
   if (queued_gop_time < 0)
     goto error_gop_duration;
 
@@ -2553,14 +2561,6 @@ handle_gathered_gop (GstSplitMuxSink * splitmux, const InputGop * gop,
       GST_WARNING_OBJECT (splitmux,
           "Couldn't calculate next fragment start time for timecode mode");
     }
-  }
-
-  /* And set up to collect the next GOP */
-  if (max_out_running_time != G_MAXINT64) {
-    splitmux->input_state = SPLITMUX_INPUT_STATE_COLLECTING_GOP_START;
-  } else {
-    /* This is probably already the current state, but just in case: */
-    splitmux->input_state = SPLITMUX_INPUT_STATE_FINISHING_UP;
   }
 
   /* And wake all input contexts to send a wake-up event */
