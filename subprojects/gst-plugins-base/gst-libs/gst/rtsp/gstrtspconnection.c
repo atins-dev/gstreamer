@@ -1360,6 +1360,9 @@ write_bytes (GOutputStream * stream, const guint8 * buffer, guint * idx,
 
   left = size - *idx;
 
+  /* XXX: do always blocking write */
+  block = TRUE;
+
   while (left) {
     if (block)
       r = g_output_stream_write (stream, (gchar *) & buffer[*idx], left,
@@ -1404,6 +1407,10 @@ writev_bytes (GOutputStream * stream, GOutputVector * vectors, gint n_vectors,
   GstRTSPResult ret;
   GError *err = NULL;
   GPollableReturn res = G_POLLABLE_RETURN_OK;
+  gboolean cancelled = FALSE;
+
+  /* XXX: do always blocking write */
+  block = TRUE;
 
   while (n_vectors > 0) {
     if (block) {
@@ -1411,6 +1418,11 @@ writev_bytes (GOutputStream * stream, GOutputVector * vectors, gint n_vectors,
                   &written, cancellable, &err))) {
         /* This will never return G_IO_ERROR_WOULD_BLOCK */
         res = G_POLLABLE_RETURN_FAILED;
+        if ((err && err->code == G_IO_ERROR_CANCELLED) ||
+            g_cancellable_is_cancelled (cancellable)) {
+          cancelled = TRUE;
+        }
+
         goto error;
       }
     } else {
@@ -1455,6 +1467,10 @@ error:
       return GST_RTSP_EINTR;
     } else if (G_UNLIKELY (written == 0)) {
       g_clear_error (&err);
+
+      if (cancelled)
+        return GST_RTSP_EINTR;
+
       return GST_RTSP_EEOF;
     }
 
