@@ -164,7 +164,6 @@ gst_d3d11_handle_set_context_for_adapter_luid (GstElement * element,
   if (g_strcmp0 (context_type, GST_D3D11_DEVICE_HANDLE_CONTEXT_TYPE) == 0) {
     const GstStructure *str;
     GstD3D11Device *other_device = NULL;
-    gint64 other_adapter_luid = 0;
 
     /* If we had device already, will not replace it */
     if (*device)
@@ -173,18 +172,15 @@ gst_d3d11_handle_set_context_for_adapter_luid (GstElement * element,
     str = gst_context_get_structure (context);
 
     if (gst_structure_get (str, "device", GST_TYPE_D3D11_DEVICE,
-            &other_device, "adapter-luid", G_TYPE_INT64,
-            &other_adapter_luid, NULL)) {
-      if (adapter_luid == other_adapter_luid) {
-        GST_CAT_DEBUG_OBJECT (GST_CAT_CONTEXT,
-            element, "Found D3D11 device context");
-        *device = other_device;
+            &other_device, NULL)) {
+      GST_CAT_DEBUG_OBJECT (GST_CAT_CONTEXT, element,
+          "Found D3D11 device context");
+      *device = other_device;
 
-        return TRUE;
-      }
-
-      gst_object_unref (other_device);
+      return TRUE;
     }
+
+    gst_object_unref (other_device);
   }
 
   return FALSE;
