@@ -336,8 +336,8 @@ gst_rtsp_url_get_request_uri (const GstRTSPUrl * url)
   post_host = url->family == GST_RTSP_FAM_INET6 ? "]" : "";
   pre_query = url->query ? "?" : "";
   query = url->query ? url->query : "";
-  if (url->transports & GST_RTSP_LOWER_TRANS_TLS)
-    g_strlcpy (scheme, "rtsps", SCHEME_SIZE);
+  // if (url->transports & GST_RTSP_LOWER_TRANS_TLS)
+  //   g_strlcpy (scheme, "rtsps", SCHEME_SIZE);
 
   if (url->port != 0) {
     uri = g_strdup_printf ("%s://%s%s%s:%u%s%s%s", scheme, pre_host, url->host,
