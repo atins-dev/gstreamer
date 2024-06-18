@@ -1371,7 +1371,7 @@ gst_d3d12_device_get_completed_value (GstD3D12Device * device,
 }
 
 /**
- * gst_d3d12_device_get_completed_value:
+ * gst_d3d12_device_set_fence_notify:
  * @device: a #GstD3D12Device
  * @queue_type: a D3D12_COMMAND_LIST_TYPE
  * @fence_value: target fence value
@@ -1388,7 +1388,7 @@ gst_d3d12_device_get_completed_value (GstD3D12Device * device,
 gboolean
 gst_d3d12_device_set_fence_notify (GstD3D12Device * device,
     D3D12_COMMAND_LIST_TYPE queue_type, guint64 fence_value,
-    GstD3D12FenceData * fence_data)
+    gpointer fence_data, GDestroyNotify notify)
 {
   g_return_val_if_fail (GST_IS_D3D12_DEVICE (device), FALSE);
   g_return_val_if_fail (fence_data, FALSE);
@@ -1408,8 +1408,7 @@ gst_d3d12_device_set_fence_notify (GstD3D12Device * device,
       return FALSE;
   }
 
-  gst_d3d12_command_queue_set_notify (queue, fence_value, fence_data,
-      (GDestroyNotify) gst_d3d12_fence_data_unref);
+  gst_d3d12_command_queue_set_notify (queue, fence_value, fence_data, notify);
 
   return TRUE;
 }
@@ -1501,7 +1500,7 @@ gst_d3d12_device_copy_texture_region (GstD3D12Device * device,
     return FALSE;
   }
 
-  gst_d3d12_fence_data_add_notify_mini_object (fence_data, gst_ca);
+  gst_d3d12_fence_data_push (fence_data, FENCE_NOTIFY_MINI_OBJECT (gst_ca));
 
   auto ca = gst_d3d12_command_allocator_get_handle (gst_ca);
   gst_d3d12_command_list_pool_acquire (cl_pool, ca, &gst_cl);
